@@ -67,3 +67,11 @@ sorted_ops = sort_by_date(operations, reverse=True)
 python test_processing.py
 \\\`\\\`\\\`
 " > README.md
+
+## Модуль processing
+
+### filter_by_state()
+Фильтрует операции по статусу.
+
+### sort_by_date()
+Сортирует операции по дате.
