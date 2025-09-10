@@ -1,4 +1,4 @@
-# Python
+echo "# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -43,4 +43,4 @@ logs/
 *.sqlite3
 
 # OS
-Thumbs.db
+Thumbs.db" > .gitignore
