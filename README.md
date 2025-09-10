@@ -1,21 +1,3 @@
-
-# Bank Operations Widget
-
-Виджет для работы с банковскими операциями клиента.
-
-## Установка
-
-1. Клонируйте репозиторий:
-\\\`\\\`\\\`bash
-git clone <ссылка-на-репозиторий>
-cd bank-operations-widget-new
-\\\`\\\`\\\`
-
-2. Установите зависимости (если есть):
-\\\`\\\`\\\`bash
-pip install -r requirements.txt
-\\\`\\\`\\\`
-
 ## Функциональность
 
 ### Модуль processing
@@ -24,11 +6,13 @@ pip install -r requirements.txt
 Фильтрует список операций по статусу.
 
 **Параметры:**
-- \\\`operations\\\`: список словарей с операциями
-- \\\`state\\\`: статус для фильтрации (по умолчанию 'EXECUTED')
+- `operations`: список словарей с операциями
+- `state`: статус для фильтрации (по умолчанию 'EXECUTED')
+
+**Возвращает:** отфильтрованный список операций
 
 **Пример:**
-\\\`\\\`\\\`python
+```python
 from src.processing import filter_by_state
 
 operations = [
@@ -37,33 +21,56 @@ operations = [
 ]
 
 executed_ops = filter_by_state(operations, 'EXECUTED')
-\\\`\\\`\\\`
+```
 
 #### sort_by_date(operations: List[Dict], reverse: bool = True) -> List[Dict]
 Сортирует список операций по дате.
 
 **Параметры:**
-- \\\`operations\\\`: список словарей с операциями
-- \\\`reverse\\\`: порядок сортировки (True - по убыванию, False - по возрастанию)
+- `operations`: список словарей с операциями  
+- `reverse`: порядок сортировки (True - по убыванию, False - по возрастанию)
+
+**Возвращает:** отсортированный список операций
 
 **Пример:**
-\\\`\\\`\\\`python
+```python
 from src.processing import sort_by_date
 
-sorted_ops = sort_by_date(operations, reverse=True)
-\\\`\\\`\\\`
+operations = [
+    {'date': '2024-03-15T10:30:00.000000', 'amount': 100},
+    {'date': '2024-03-16T08:45:00.000000', 'amount': 200}
+]
 
-## Разработка
+# По убыванию (новые сначала)
+sorted_desc = sort_by_date(operations, reverse=True)
 
-Проект использует GitFlow. Основные ветки:
-- \\\`main\\\` - стабильная версия
-- \\\`develop\\\` - разработка
-- \\\`feature/*\\\` - новые функции
+# По возрастанию (старые сначала)
+sorted_asc = sort_by_date(operations, reverse=False)
+```
 
-## Тестирование
+### Модуль widget
 
-Запуск тестов:
-\\\`\\\`\\\`bash
-python test_processing.py
-\\\`\\\`\\\`
-" > README.md
+#### mask_account_card(account_info: str) -> str
+Маскирует номер карты или счета.
+
+**Пример:**
+```python
+from src.widget import mask_account_card
+
+masked_card = mask_account_card("Visa Platinum 7000792289606361")
+# Результат: "Visa Platinum 7000 79** **** 6361"
+
+masked_account = mask_account_card("Счет 73654108430135874305")  
+# Результат: "Счет **4305"
+```
+
+#### get_date(date_string: str) -> str
+Преобразует дату в формат ДД.ММ.ГГГГ.
+
+**Пример:**
+```python
+from src.widget import get_date
+
+formatted_date = get_date("2024-03-11T02:26:18.671407")
+# Результат: "11.03.2024"
+```
