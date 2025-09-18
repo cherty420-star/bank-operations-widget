@@ -74,3 +74,33 @@ from src.widget import get_date
 formatted_date = get_date("2024-03-11T02:26:18.671407")
 # Результат: "11.03.2024"
 ```
+
+## Тестирование
+
+### Запуск тестов
+```bash
+# Все тесты
+pytest
+
+# С отчетом о покрытии
+pytest --cov=src --cov-report=html
+
+# Конкретный модуль
+pytest tests/test_processing.py -v
+
+Покрытие кода
+Запустите pytest --cov=src --cov-report=html
+
+Откройте htmlcov/index.html для просмотра отчета
+
+Требуемое покрытие: >80%
+
+text
+
+## 9. **Сделайте коммиты и создайте PR**
+
+```bash
+git add .
+git commit -m "Add comprehensive test suite with fixtures and parametrization"
+git commit -m "Update README with testing documentation"
+git push origin feature/testing
