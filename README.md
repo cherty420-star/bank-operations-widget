@@ -104,3 +104,76 @@ git add .
 git commit -m "Add comprehensive test suite with fixtures and parametrization"
 git commit -m "Update README with testing documentation"
 git push origin feature/testing
+
+
+## Модуль generators
+
+### filter_by_currency(transactions, currency) -> Iterator[Dict]
+Фильтрует транзакции по валюте и возвращает итератор.
+
+**Параметры:**
+- `transactions`: список транзакций
+- `currency`: код валюты (например, 'USD', 'RUB', 'EUR')
+
+**Пример:**
+```python
+from src.generators import filter_by_currency
+
+transactions = [
+    {'operationAmount': {'currency': {'code': 'USD'}}},
+    {'operationAmount': {'currency': {'code': 'RUB'}}}
+]
+
+usd_transactions = filter_by_currency(transactions, 'USD')
+for transaction in usd_transactions:
+    print(transaction)
+
+transaction_descriptions(transactions) -> Generator[str]
+Генератор описаний транзакций.
+
+Пример:
+
+python
+from src.generators import transaction_descriptions
+
+descriptions = transaction_descriptions(transactions)
+for description in descriptions:
+    print(description)
+card_number_generator(start, end) -> Generator[str]
+Генератор номеров банковских карт в формате XXXX XXXX XXXX XXXX.
+
+Параметры:
+
+start: начальный номер (от 1)
+
+end: конечный номер (до 9999999999999999)
+
+Пример:
+
+python
+from src.generators import card_number_generator
+
+# Генерация 5 номеров карт
+card_numbers = card_number_generator(1, 5)
+for number in card_numbers:
+    print(number)
+# Output: 
+# 0000 0000 0000 0001
+# 0000 0000 0000 0002
+# ...
+Тестирование
+bash
+# Запуск тестов для генераторов
+pytest tests/test_generators.py -v
+
+# Проверка покрытия
+pytest --cov=src.generators --cov-report=html
+Пример использования
+python
+from src.generators import filter_by_currency, card_number_generator
+
+# Фильтрация транзакций
+usd_transactions = list(filter_by_currency(transactions, 'USD'))
+
+# Генерация тестовых номеров карт
+test_cards = list(card_number_generator(1000000000000000, 1000000000000005))
