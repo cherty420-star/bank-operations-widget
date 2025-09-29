@@ -177,3 +177,38 @@ usd_transactions = list(filter_by_currency(transactions, 'USD'))
 
 # Генерация тестовых номеров карт
 test_cards = list(card_number_generator(1000000000000000, 1000000000000005))
+
+## Модуль decorators
+
+### Декоратор `log(filename=None)`
+Автоматически логирует выполнение функций с временными метками и информацией об ошибках.
+
+**Параметры:**
+- `filename`: имя файла для записи логов (если None - вывод в консоль)
+
+**Логируемая информация:**
+- Время начала и окончания выполнения
+- Имя функции
+- Результат выполнения (при успехе)
+- Информация об ошибках (тип, сообщение, аргументы)
+- Время выполнения
+
+**Пример использования:**
+```python
+from src.decorators import log
+
+# Логирование в консоль
+@log()
+def add(a, b):
+    return a + b
+
+# Логирование в файл
+@log(filename="app.log")
+def process_data(data):
+    if not data:
+        raise ValueError("Empty data")
+    return data.upper()
+
+# Использование
+result = add(2, 3)  # Логи в консоль
+process_data("test")  # Логи в файл app.log
