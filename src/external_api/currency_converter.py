@@ -8,9 +8,9 @@ load_dotenv()
 
 
 class CurrencyConverter:
-    def __init__(self, api_key: str = None):
-        self.api_key = api_key or os.getenv('EXCHANGE_RATE_API_KEY')
-        self.base_url = "https://api.apilayer.com/exchangerates_data/latest"
+    def __init__(self):
+        self.api_key = os.getenv('EXCHANGE_RATE_API_KEY')
+        self.base_url = "https://api.apilayer.com/exchangerates_data"
 
     def get_exchange_rate(self, from_currency: str, to_currency: str = "RUB") -> float:
         """
@@ -27,18 +27,31 @@ class CurrencyConverter:
             raise ValueError("API key not found in environment variables")
 
         headers = {"apikey": self.api_key}
-        params = {"base": from_currency, "symbols": to_currency}
+
+        # ПРАВИЛЬНЫЙ URL согласно документации API
+        url = f"{self.base_url}/convert?to={to_currency}&from={from_currency}&amount=1"
 
         try:
-            response = requests.get(self.base_url, headers=headers, params=params, timeout=10)
+            response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
 
             data = response.json()
-            return data['rates'][to_currency]
+
+            # Проверяем структуру ответа для endpoint /convert
+            if not data.get('success', True):
+                error_info = data.get('error', {})
+                raise ValueError(f"API error: {error_info.get('info', 'Unknown error')}")
+
+            # Для endpoint /convert результат в поле 'result'
+            result = data.get('result')
+            if result is None:
+                raise ValueError("Result not found in API response")
+
+            return float(result)
 
         except requests.exceptions.RequestException as e:
             raise ConnectionError(f"Failed to fetch exchange rate: {e}")
-        except (KeyError, ValueError) as e:
+        except (KeyError, ValueError, TypeError) as e:
             raise ValueError(f"Invalid response format: {e}")
 
     def convert_to_rubles(self, transaction: Dict[str, Any]) -> float:
@@ -51,25 +64,25 @@ class CurrencyConverter:
         Returns:
             Сумма в рублях (float)
         """
-        amount = transaction.get('amount', 0)
-        currency = transaction.get('currency', 'RUB')
+        try:
+            amount = float(transaction.get('amount', 0))
+            currency = transaction.get('currency', 'RUB')
 
-        # Если уже в рублях, возвращаем как есть
-        if currency == 'RUB':
-            return float(amount)
+            # Если уже в рублях, возвращаем как есть
+            if currency == 'RUB':
+                return amount
 
-        # Если в поддерживаемой валюте, конвертируем
-        if currency in ['USD', 'EUR']:
-            try:
+            # Если в поддерживаемой валюте, конвертируем
+            if currency in ['USD', 'EUR']:
                 rate = self.get_exchange_rate(currency, 'RUB')
-                return float(amount) * rate
-            except Exception as e:
-                # В случае ошибки API возвращаем исходную сумму
-                print(f"Conversion error: {e}")
-                return float(amount)
+                return amount * rate
 
-        # Для неизвестных валют возвращаем как есть
-        return float(amount)
+            # Для неизвестных валют возвращаем как есть
+            return amount
+
+        except (ValueError, TypeError):
+            # Если amount нельзя преобразовать в float
+            return 0.0
 
 
 # Функция для удобного использования
