@@ -212,3 +212,30 @@ def process_data(data):
 # Использование
 result = add(2, 3)  # Логи в консоль
 process_data("test")  # Логи в файл app.log
+
+# Финансовый трекер
+
+## Новая функциональность
+
+### Поддержка CSV и Excel файлов
+
+Теперь приложение поддерживает чтение финансовых операций из следующих форматов:
+- **CSV** - через функцию `read_csv_transactions()`
+- **Excel** - через функцию `read_excel_transactions()`
+
+#### Использование:
+
+```python
+from file_parsers import read_csv_transactions, read_excel_transactions
+
+# Чтение из CSV
+csv_transactions = read_csv_transactions('transactions.csv')
+
+# Чтение из Excel
+excel_transactions = read_excel_transactions('transactions.xlsx')
+Требования к файлам:
+CSV: стандартный формат с разделителями-запятыми
+
+Excel: файлы формата .xlsx
+
+Обе функции возвращают список словарей, где каждый словарь представляет одну транзакцию.

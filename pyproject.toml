@@ -55,3 +55,8 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 show_error_codes = true
 
+[tool.pytest.ini_options]
+addopts = "--verbose --cov=file_parsers --cov-report=term-missing --cov-report=html"
+testpaths = ["tests"]
+minversion = "6.0"
+

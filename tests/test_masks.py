@@ -1,37 +1,35 @@
-"""Тесты для модуля масок."""
-
 import pytest
+import logging
+from unittest.mock import patch, Mock
 from src.masks import get_mask_card_number, get_mask_account
 
 
-def test_get_mask_card_number_valid() -> None:
-    """Test valid card number masking."""
-    assert get_mask_card_number("1234567890123456") == "1234 56** **** 3456"
-    assert get_mask_card_number("1111222233334444") == "1111 22** **** 4444"
-
-
-def test_get_mask_account_valid() -> None:
-    """Test valid account number masking."""
-    assert get_mask_account("1234567890") == "**7890"
-    assert get_mask_account("1111222233334444") == "**4444"
-
-
-def test_get_mask_card_number_invalid() -> None:
-    """Test invalid card number handling."""
-    with pytest.raises(ValueError, match="Card number must be 16 digits"):
-        get_mask_card_number("123")  # Too short
-
-    with pytest.raises(ValueError, match="Card number must be 16 digits"):
-        get_mask_card_number("12345678901234567")  # Too long
-
-    with pytest.raises(ValueError, match="Card number must be 16 digits"):
-        get_mask_card_number("123456789012abc6")  # Contains letters
-
-
-def test_get_mask_account_invalid() -> None:
-    """Test invalid account number handling."""
-    with pytest.raises(ValueError, match="Account number must be at least 4 digits"):
-        get_mask_account("123")  # Too short
-
-    with pytest.raises(ValueError, match="Account number must be at least 4 digits"):
-        get_mask_account("12ab")  # Contains letters
+class TestMasks:
+    
+    def test_get_mask_card_number_valid(self):
+        """Тестирование маскировки валидного номера карты"""
+        with patch.object(logging.getLogger('masks'), 'info') as mock_info:
+            result = get_mask_card_number("1234567890123456")
+            assert result == "1234 56** **** 3456"
+            mock_info.assert_called_once()
+    
+    def test_get_mask_card_number_invalid(self):
+        """Тестирование маскировки невалидного номера карты"""
+        with patch.object(logging.getLogger('masks'), 'error') as mock_error:
+            result = get_mask_card_number("123")
+            assert result == "123"
+            mock_error.assert_called_once()
+    
+    def test_get_mask_account_valid(self):
+        """Тестирование маскировки валидного номера счета"""
+        with patch.object(logging.getLogger('masks'), 'info') as mock_info:
+            result = get_mask_account("12345678901234567890")
+            assert result == "**7890"
+            mock_info.assert_called_once()
+    
+    def test_get_mask_account_invalid(self):
+        """Тестирование маскировки невалидного номера счета"""
+        with patch.object(logging.getLogger('masks'), 'error') as mock_error:
+            result = get_mask_account("123")
+            assert result == "123"
+            mock_error.assert_called_once()

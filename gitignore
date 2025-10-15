@@ -44,3 +44,12 @@ logs/
 
 # OS
 Thumbs.db" > .gitignore
+
+echo "__pycache__/" >> .gitignore
+echo "*.pyc" >> .gitignore
+echo ".coverage" >> .gitignore
+echo "htmlcov/" >> .gitignore
+echo ".pytest_cache/" >> .gitignore
+echo "logs/" >> .gitignore
+
+.env
