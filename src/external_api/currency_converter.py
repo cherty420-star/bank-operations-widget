@@ -1,100 +1,71 @@
-import os
-import requests
-from typing import Dict, Any
-from dotenv import load_dotenv
+"""
+Модуль для конвертации валют.
+"""
 
-# Загружаем переменные окружения
-load_dotenv()
+from typing import Optional, Dict, Union
 
 
 class CurrencyConverter:
-    def __init__(self):
-        self.api_key = os.getenv('EXCHANGE_RATE_API_KEY')
-        self.base_url = "https://api.apilayer.com/exchangerates_data"
+    """
+    Упрощенный конвертер валют для демонстрационных целей.
+    """
 
-    def get_exchange_rate(self, from_currency: str, to_currency: str = "RUB") -> float:
+    def __init__(self) -> None:
+        """Инициализация конвертера валют."""
+        # Фиксированные курсы для демонстрации
+        self.exchange_rates: Dict[str, Dict[str, float]] = {
+            'USD': {'RUB': 90.0, 'EUR': 0.85},
+            'EUR': {'USD': 1.18, 'RUB': 95.0},
+            'RUB': {'USD': 0.011, 'EUR': 0.0105}
+        }
+
+    def convert_currency(self, amount: float, from_currency: str, to_currency: str) -> Optional[float]:
         """
-        Получает текущий курс валюты.
+        Конвертирует сумму из одной валюты в другую.
 
         Args:
-            from_currency: Исходная валюта (USD, EUR)
-            to_currency: Целевая валюта (по умолчанию RUB)
+            amount: Сумма для конвертации
+            from_currency: Исходная валюта
+            to_currency: Целевая валюта
 
         Returns:
-            Курс обмена
+            Optional[float]: Конвертированная сумма или None при ошибке
         """
-        if not self.api_key:
-            raise ValueError("API key not found in environment variables")
-
-        headers = {"apikey": self.api_key}
-
-        # ПРАВИЛЬНЫЙ URL согласно документации API
-        url = f"{self.base_url}/convert?to={to_currency}&from={from_currency}&amount=1"
-
-        try:
-            response = requests.get(url, headers=headers, timeout=10)
-            response.raise_for_status()
-
-            data = response.json()
-
-            # Проверяем структуру ответа для endpoint /convert
-            if not data.get('success', True):
-                error_info = data.get('error', {})
-                raise ValueError(f"API error: {error_info.get('info', 'Unknown error')}")
-
-            # Для endpoint /convert результат в поле 'result'
-            result = data.get('result')
-            if result is None:
-                raise ValueError("Result not found in API response")
-
-            return float(result)
-
-        except requests.exceptions.RequestException as e:
-            raise ConnectionError(f"Failed to fetch exchange rate: {e}")
-        except (KeyError, ValueError, TypeError) as e:
-            raise ValueError(f"Invalid response format: {e}")
-
-    def convert_to_rubles(self, transaction: Dict[str, Any]) -> float:
-        """
-        Конвертирует сумму транзакции в рубли.
-
-        Args:
-            transaction: Словарь с данными транзакции
-
-        Returns:
-            Сумма в рублях (float)
-        """
-        try:
-            amount = float(transaction.get('amount', 0))
-            currency = transaction.get('currency', 'RUB')
-
-            # Если уже в рублях, возвращаем как есть
-            if currency == 'RUB':
-                return amount
-
-            # Если в поддерживаемой валюте, конвертируем
-            if currency in ['USD', 'EUR']:
-                rate = self.get_exchange_rate(currency, 'RUB')
-                return amount * rate
-
-            # Для неизвестных валют возвращаем как есть
+        if from_currency == to_currency:
             return amount
 
-        except (ValueError, TypeError):
-            # Если amount нельзя преобразовать в float
-            return 0.0
+        if from_currency not in self.exchange_rates:
+            print(f"Валюта {from_currency} не поддерживается")
+            return None
+
+        if to_currency not in self.exchange_rates[from_currency]:
+            print(f"Конвертация из {from_currency} в {to_currency} не поддерживается")
+            return None
+
+        rate = self.exchange_rates[from_currency][to_currency]
+        converted_amount: float = amount * rate
+        return converted_amount
 
 
-# Функция для удобного использования
-def get_transaction_amount_in_rubles(transaction: Dict[str, Any]) -> float:
-    """
-    Возвращает сумму транзакции в рублях.
-
-    Args:
-        transaction: Словарь с данными транзакции
-
-    Returns:
-        Сумма в рублях
-    """
+def main() -> None:
+    """Демонстрация работы конвертера валют."""
     converter = CurrencyConverter()
-    return converter.convert_to_rubles(transaction)
+
+    # Примеры конвертации
+    test_cases = [
+        (100, "USD", "RUB"),
+        (50, "EUR", "USD"),
+        (1000, "RUB", "EUR")
+    ]
+
+    print("Демонстрация конвертера валют:")
+    for amount, from_curr, to_curr in test_cases:
+        result = converter.convert_currency(amount, from_curr, to_curr)
+        if result is not None:
+            print(f"{amount} {from_curr} = {result:.2f} {to_curr}")
+        else:
+            print(f"Не удалось конвертировать {amount} {from_curr} в {to_curr}")
+
+
+if __name__ == "__main__":
+    main()
