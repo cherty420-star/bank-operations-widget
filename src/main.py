@@ -1,6 +1,122 @@
 from typing import List, Dict, Any
+import os
+import json
 from widget import mask_account_card, get_date
 from operations import process_bank_search
+
+
+def load_operations_from_json(file_path: str) -> List[Dict[str, Any]]:
+    """
+    Загружает операции из JSON-файла.
+
+    Args:
+        file_path: Путь к JSON-файлу
+
+    Returns:
+        List[Dict]: Список операций
+    """
+    try:
+        # Если путь не абсолютный, ищем файл в папке data
+        if not os.path.isabs(file_path):
+            data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
+            file_path = os.path.join(data_dir, file_path)
+
+        with open(file_path, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+
+        # Если данные - список, возвращаем как есть
+        if isinstance(data, list):
+            return data
+        # Если данные - словарь с ключом 'operations', извлекаем его
+        elif isinstance(data, dict) and 'operations' in data:
+            return data['operations']
+        else:
+            print("Неверный формат данных в JSON-файле")
+            return []
+
+    except FileNotFoundError:
+        print(f"Файл {file_path} не найден")
+        return []
+    except json.JSONDecodeError:
+        print(f"Ошибка чтения JSON из файла {file_path}")
+        return []
+    except Exception as e:
+        print(f"Ошибка при загрузке файла: {e}")
+        return []
+
+
+def load_operations(file_type: str) -> List[Dict[str, Any]]:
+    """
+    Загружает операции в зависимости от выбранного типа файла.
+
+    Args:
+        file_type: Тип файла ('1', '2', '3')
+
+    Returns:
+        List[Dict]: Список операций
+    """
+    if file_type == "1":  # JSON
+        file_name = input("Введите имя JSON-файла (например: operations.json): ").strip()
+        if not file_name:
+            file_name = "operations.json"  # файл по умолчанию
+
+        operations = load_operations_from_json(file_name)
+
+        if operations:
+            print(f"Успешно загружено {len(operations)} операций")
+        else:
+            print("Не удалось загрузить операции из файла")
+
+        return operations
+
+    elif file_type == "2":  # CSV
+        print("Загрузка из CSV файлов будет реализована в будущем")
+        return []
+
+    elif file_type == "3":  # XLSX
+        print("Загрузка из XLSX файлов будет реализована в будущем")
+        return []
+
+    return []
+
+
+def format_operation(operation: Dict[str, Any]) -> str:
+    """
+    Форматирует операцию для красивого вывода.
+
+    Args:
+        operation: Данные операции
+
+    Returns:
+        str: Отформатированная строка с операцией
+    """
+    # Форматирование даты
+    date = get_date(operation.get('date', ''))
+
+    # Форматирование описания
+    description = operation.get('description', 'Неизвестная операция')
+
+    # Форматирование суммы и валюты
+    amount = operation.get('amount', 0)
+    currency = operation.get('currency', 'RUB')
+
+    # Форматирование счета/карты (упрощенная версия)
+    from_account = mask_account_card(operation.get('from', 'Неизвестно'))
+    to_account = mask_account_card(operation.get('to', 'Неизвестно'))
+
+    result = f"{date} {description}\n"
+
+    # Если есть отправитель и получатель
+    if from_account != 'Неизвестно' and to_account != 'Неизвестно':
+        result += f"{from_account} -> {to_account}\n"
+    elif from_account != 'Неизвестно':
+        result += f"{from_account}\n"
+    elif to_account != 'Неизвестно':
+        result += f"{to_account}\n"
+
+    result += f"Сумма: {amount} {currency}\n"
+
+    return result
 
 
 def main() -> None:
@@ -21,9 +137,12 @@ def main() -> None:
         print("Неверный выбор файла.")
         return
 
-    # Здесь должна быть загрузка данных из файла
-    # operations = load_operations(file_choice)
-    operations: List[Dict[str, Any]] = []  # Добавляем аннотацию типа
+    # Загрузка данных из файла
+    operations = load_operations(file_choice)
+
+    if not operations:
+        print("Не удалось загрузить операции. Программа завершена.")
+        return
 
     # Фильтрация по статусу
     operations = filter_by_status(operations)
@@ -36,6 +155,10 @@ def main() -> None:
     operations = sort_operations(operations)
     operations = filter_rub_operations(operations)
     operations = filter_by_keyword(operations)
+
+    if not operations:
+        print("После применения фильтров не осталось операций")
+        return
 
     # Вывод результатов
     print_operations(operations)
@@ -103,24 +226,13 @@ def filter_by_keyword(operations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 def print_operations(operations: List[Dict[str, Any]]) -> None:
     """Выводит отформатированный список операций."""
-    print("Распечатываю итоговый список транзакций...")
+    print("\nРаспечатываю итоговый список транзакций...")
     print(f"Всего банковских операций в выборке: {len(operations)}\n")
 
-    for operation in operations:
-        # Форматирование даты
-        date = get_date(operation.get('date', ''))
-
-        # Форматирование описания
-        description = operation.get('description', '')
-
-        # Форматирование суммы и валюты
-        amount = operation.get('amount', 0)
-        currency = operation.get('currency', 'RUB')
-
-        print(f"{date} {description}")
-        # Здесь должна быть логика маскировки счетов/карт
-        # print(f"Счет **4321")
-        print(f"Сумма: {amount} {currency}\n")
+    for i, operation in enumerate(operations, 1):
+        print(f"--- Операция {i} ---")
+        print(format_operation(operation))
+        print()  # Пустая строка между операциями
 
 
 if __name__ == "__main__":
