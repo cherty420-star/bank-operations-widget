@@ -1,36 +1,48 @@
 def mask_account_card(account_info: str) -> str:
     """
-    Маскирует номер карты или счета в переданной строке.
-
-    Args:
-        account_info: строка с информацией о карте или счете
-        (например: "Visa Platinum 7000792289606361", "Счет 73654108430135874305")
-
-    Returns:
-        str: строка с замаскированным номером
+    Маскирует номер счета или карты.
+    Для карт: первые 6 и последние 4 цифры видимы, остальные заменены на *
+    Для счетов: видимы только последние 4 цифры
     """
-    # Разделяем строку на части
-    parts = account_info.split()
+    if not account_info or not any(char.isdigit() for char in account_info):
+        return account_info
 
-    # Если это счет
-    if "счет" in account_info.lower():
-        # Берем последнюю часть (номер счета)
-        account_number = parts[-1]
-        # Маскируем счет: показываем последние 4 цифры
-        masked_number = f"**{account_number[-4:]}"
-        return f"{' '.join(parts[:-1])} {masked_number}"
+    # Разделяем текст и цифры
+    words = account_info.split()
+    digits = ''.join([char for char in account_info if char.isdigit()])
+    text = ' '.join([word for word in words if not word.isdigit()])
 
-    else:
-        # Это карта - берем последнюю часть (номер карты)
-        card_number = parts[-1]
-        # Маскируем карту: первые 6 и последние 4 цифры видимы
-        if len(card_number) >= 16:
-            masked_number = f"{card_number[:4]} {card_number[4:6]}** **** {card_number[-4:]}"
+    if not digits:
+        return account_info
+
+    # Определяем тип по тексту или длине цифр
+    if ("счет" in text.lower() or "account" in text.lower() or
+            len(digits) > 16):  # Считаем, что счета длиннее 16 цифр
+
+        # Маскировка счета: показываем только последние 4 цифры
+        if len(digits) >= 4:
+            masked_digits = "**" + digits[-4:]
         else:
-            masked_number = card_number  # если номер слишком короткий
+            masked_digits = digits
+    else:
+        # Маскировка карты: показываем первые 6 и последние 4 цифры
+        if len(digits) >= 10:
+            # Для нормальных номеров карт
+            first_six = digits[:6]
+            last_four = digits[-4:]
+            middle = "*" * max(0, len(digits) - 10)  # Звездочки для средней части
+            masked_digits = f"{first_six[:4]} {first_six[4:6]}{middle} {last_four}"
+        elif len(digits) >= 8:
+            # Для коротких номеров - адаптивная маскировка
+            first_part = digits[:4]
+            last_part = digits[-4:]
+            middle = "*" * max(0, len(digits) - 8)
+            masked_digits = f"{first_part} {middle} {last_part}"
+        else:
+            # Для очень коротких номеров - не маскируем
+            masked_digits = digits
 
-        return f"{' '.join(parts[:-1])} {masked_number}"
-
+    return f"{text} {masked_digits}".strip() if text else masked_digits
 
 def get_date(date_string: str) -> str:
     """
@@ -40,15 +52,26 @@ def get_date(date_string: str) -> str:
         date_string: строка с датой в формате "2024-03-11T02:26:18.671407"
 
     Returns:
-        str: дата в формате "11.03.2024"
+        str: дата в формате "11.03.2024" или исходная строка при ошибке
     """
     from datetime import datetime
 
+    # Проверка на None и пустую строку
+    if date_string is None:
+        return None
+    if date_string == "":
+        return ""
+
     try:
-        # Парсим дату из строки
+        # Проверяем, содержит ли строка время (буква 'T' или время с миллисекундами)
+        if 'T' not in date_string and '.' not in date_string and len(date_string) == 10:
+            # Это просто дата без времени - возвращаем как есть
+            return date_string
+
+        # Парсим дату из строки ISO формата
         date_obj = datetime.fromisoformat(date_string.replace('Z', '+00:00'))
         # Форматируем в нужный формат
         return date_obj.strftime("%d.%m.%Y")
-    except ValueError:
-        # Если формат неправильный, возвращаем оригинальную строку или обрабатываем ошибку
+    except (ValueError, AttributeError):
+        # При любой ошибке возвращаем исходную строку
         return date_string
