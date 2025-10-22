@@ -5,138 +5,109 @@ from widget import mask_account_card, get_date
 from operations import process_bank_search
 
 
-def load_operations_from_json(file_path: str) -> List[Dict[str, Any]]:
+def load_operations_from_json() -> List[Dict[str, Any]]:
     """
-    Загружает операции из JSON-файла.
-
-    Args:
-        file_path: Путь к JSON-файлу
+    Загружает операции из JSON-файла по умолчанию.
 
     Returns:
         List[Dict]: Список операций
     """
-    try:
-        # Автоматически ищем файл в стандартных папках
-        possible_paths = [
-            file_path,  # исходный путь
-            os.path.join('data', file_path),  # папка data
-            os.path.join('..', 'data', file_path),  # на уровень выше в data
-            os.path.join(os.path.dirname(__file__), '..', 'data', file_path)  # абсолютный путь
-        ]
+    # Стандартные пути к файлам
+    possible_paths = [
+        "operations.json",
+        "data/operations.json",
+        "../data/operations.json",
+        os.path.join(os.path.dirname(__file__), '..', 'data', 'operations.json')
+    ]
 
-        actual_path = None
-        for path in possible_paths:
-            if os.path.exists(path):
-                actual_path = path
-                break
+    for file_path in possible_paths:
+        try:
+            if os.path.exists(file_path):
+                print(f"Загружаем данные из: {file_path}")
+                with open(file_path, 'r', encoding='utf-8') as file:
+                    data = json.load(file)
 
-        if actual_path is None:
-            print(f"Файл {file_path} не найден в стандартных расположениях:")
-            for path in possible_paths:
-                print(f"  - {path}")
-            return []
+                # Обработка разных форматов данных
+                if isinstance(data, list):
+                    operations = data
+                elif isinstance(data, dict):
+                    # Пробуем разные возможные ключи
+                    possible_keys = ['operations', 'transactions', 'data', 'results']
+                    operations = []
+                    for key in possible_keys:
+                        if key in data and isinstance(data[key], list):
+                            operations = data[key]
+                            break
+                    if not operations:
+                        operations = [data]  # если единственный словарь
+                else:
+                    continue
 
-        print(f"Загружаем данные из: {actual_path}")
+                print(f"Успешно загружено {len(operations)} операций")
+                return operations
 
-        with open(actual_path, 'r', encoding='utf-8') as file:
-            data = json.load(file)
+        except Exception as e:
+            continue
 
-        # Обработка разных форматов данных
-        if isinstance(data, list):
-            operations = data
-        elif isinstance(data, dict):
-            # Пробуем разные возможные ключи
-            possible_keys = ['operations', 'transactions', 'data', 'results']
-            operations = []
-            for key in possible_keys:
-                if key in data and isinstance(data[key], list):
-                    operations = data[key]
-                    break
-            if not operations:
-                operations = [data]  # если единственный словарь
-        else:
-            print("Неверный формат данных в JSON-файле")
-            return []
-
-        print(f"Успешно загружено {len(operations)} операций")
-        return operations
-
-    except FileNotFoundError:
-        print(f"Файл {file_path} не найден")
-        return []
-    except json.JSONDecodeError:
-        print(f"Ошибка чтения JSON из файла {file_path}")
-        return []
-    except Exception as e:
-        print(f"Ошибка при загрузке файла: {e}")
-        return []
+    print("Не удалось найти или загрузить файл operations.json")
+    return []
 
 
 def load_operations(file_type: str) -> List[Dict[str, Any]]:
     """
-    Загружает операции в зависимости от выбранного типа файла.
+    Загружает операции из JSON файла независимо от выбора.
+    CSV и Excel будут добавлены в будущем.
+    """
+    file_types = {"1": "JSON", "2": "CSV", "3": "XLSX"}
+    selected_type = file_types.get(file_type, "JSON")
+
+    print(f"Для обработки выбран {selected_type}-файл.")
+
+    # Всегда загружаем из JSON для демонстрации
+    operations = load_operations_from_json()
+
+    if not operations:
+        print("Не удалось загрузить данные.")
+
+    return operations
+
+
+def convert_currency(amount: float, from_currency: str, to_currency: str) -> float:
+    """
+    Конвертирует валюту (упрощенная реализация).
 
     Args:
-        file_type: Тип файла ('1', '2', '3')
+        amount: Сумма
+        from_currency: Исходная валюта
+        to_currency: Целевая валюта
 
     Returns:
-        List[Dict]: Список операций
+        float: Конвертированная сумма
     """
-    # Стандартные файлы из предыдущих домашних заданий
-    default_files = {
-        "1": "operations.json",  # JSON файл
-        "2": "transactions.csv",  # CSV файл
-        "3": "operations.xlsx"  # Excel файл
+    if from_currency == to_currency:
+        return amount
+
+    # Упрощенные курсы для демонстрации
+    exchange_rates = {
+        'USD': {'RUB': 90.0, 'EUR': 0.85},
+        'EUR': {'USD': 1.18, 'RUB': 95.0},
+        'RUB': {'USD': 0.011, 'EUR': 0.0105}
     }
 
-    if file_type == "1":  # JSON
-        file_name = input("Введите имя JSON-файла (по умолчанию: operations.json): ").strip()
-        if not file_name:
-            file_name = default_files["1"]
-
-        operations = load_operations_from_json(file_name)
-
-        if not operations:
-            # Пробуем альтернативные имена файлов
-            alternative_files = [
-                "operations.json",
-                "data.json",
-                "transactions.json",
-                "bank_operations.json"
-            ]
-            for alt_file in alternative_files:
-                print(f"Пробуем загрузить {alt_file}...")
-                operations = load_operations_from_json(alt_file)
-                if operations:
-                    break
-
-        return operations
-
-    elif file_type == "2":  # CSV
-        print("Загрузка из CSV файлов будет реализована в будущем")
-        file_name = input("Введите имя CSV-файла: ").strip()
-        if not file_name:
-            file_name = default_files["2"]
-        print(f"CSV файл {file_name} будет обработан в будущих версиях")
-        return []
-
-    elif file_type == "3":  # XLSX
-        print("Загрузка из XLSX файлов будет реализована в будущем")
-        file_name = input("Введите имя XLSX-файла: ").strip()
-        if not file_name:
-            file_name = default_files["3"]
-        print(f"Excel файл {file_name} будет обработан в будущих версиях")
-        return []
-
-    return []
+    if from_currency in exchange_rates and to_currency in exchange_rates[from_currency]:
+        return amount * exchange_rates[from_currency][to_currency]
+    else:
+        # Если курс неизвестен, возвращаем исходную сумму
+        return amount
 
 
-def format_operation(operation: Dict[str, Any]) -> str:
+def format_operation(operation: Dict[str, Any], target_currency: str = None) -> str:
     """
     Форматирует операцию для красивого вывода.
 
     Args:
         operation: Данные операции
+        target_currency: Валюта для конвертации (None - исходная валюта)
 
     Returns:
         str: Отформатированная строка с операцией
@@ -150,6 +121,17 @@ def format_operation(operation: Dict[str, Any]) -> str:
     # Форматирование суммы и валюты
     amount = operation.get('amount', 0)
     currency = operation.get('currency', 'RUB')
+
+    # Конвертация валюты если нужно
+    if target_currency and target_currency != currency:
+        converted_amount = convert_currency(amount, currency, target_currency)
+        amount_display = f"{converted_amount:.2f}"
+        currency_display = target_currency
+        original_info = f" (оригинал: {amount} {currency})"
+    else:
+        amount_display = amount
+        currency_display = currency
+        original_info = ""
 
     # Форматирование счета/карты
     from_account = operation.get('from', '')
@@ -169,7 +151,7 @@ def format_operation(operation: Dict[str, Any]) -> str:
     if from_account or to_account:
         result += "\n"
 
-    result += f"Сумма: {amount} {currency}\n"
+    result += f"Сумма: {amount_display} {currency_display}{original_info}\n"
 
     return result
 
@@ -184,11 +166,8 @@ def main() -> None:
 
     # Выбор типа файла
     file_choice = input().strip()
-    file_types = {"1": "JSON", "2": "CSV", "3": "XLSX"}
 
-    if file_choice in file_types:
-        print(f"Для обработки выбран {file_types[file_choice]}-файл.")
-    else:
+    if file_choice not in ["1", "2", "3"]:
         print("Неверный выбор файла.")
         return
 
@@ -210,7 +189,7 @@ def main() -> None:
 
     # Дополнительные фильтры
     operations = sort_operations(operations)
-    operations = filter_rub_operations(operations)
+    operations, target_currency = filter_currency_operations(operations)
     operations = filter_by_keyword(operations)
 
     if not operations:
@@ -218,7 +197,7 @@ def main() -> None:
         return
 
     # Вывод результатов
-    print_operations(operations)
+    print_operations(operations, target_currency)
 
 
 def filter_by_status(operations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -272,16 +251,26 @@ def sort_operations(operations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return operations
 
 
-def filter_rub_operations(operations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Фильтрует рублевые операции."""
-    answer = input("\nВыводить только рублевые транзакции? Да/Нет: ").strip().lower()
+def filter_currency_operations(operations: List[Dict[str, Any]]) -> tuple[List[Dict[str, Any]], str]:
+    """Фильтрует операции по валюте с возможностью конвертации."""
+    answer = input("\nФильтровать по валюте? Да/Нет: ").strip().lower()
 
     if answer in ['да', 'yes', 'y', 'д']:
-        rub_operations = [op for op in operations if op.get('currency', '').upper() == 'RUB']
-        print(f"Оставлено рублевых операций: {len(rub_operations)}")
-        return rub_operations
+        print("Доступные валюты: RUB, USD, EUR, ALL (все валюты)")
+        currency_choice = input("Введите валюту (или ALL для всех): ").strip().upper()
 
-    return operations
+        if currency_choice == 'ALL':
+            target_currency = input("В какую валюту конвертировать? (RUB/USD/EUR): ").strip().upper()
+            if target_currency not in ['RUB', 'USD', 'EUR']:
+                target_currency = None
+            print(f"Показаны все валюты, конвертация в {target_currency if target_currency else 'исходные валюты'}")
+            return operations, target_currency
+        else:
+            filtered_operations = [op for op in operations if op.get('currency', '').upper() == currency_choice]
+            print(f"Оставлено операций в валюте {currency_choice}: {len(filtered_operations)}")
+            return filtered_operations, currency_choice
+
+    return operations, None
 
 
 def filter_by_keyword(operations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -300,7 +289,7 @@ def filter_by_keyword(operations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return operations
 
 
-def print_operations(operations: List[Dict[str, Any]]) -> None:
+def print_operations(operations: List[Dict[str, Any]], target_currency: str = None) -> None:
     """Выводит отформатированный список операций."""
     print("\n" + "=" * 50)
     print("Распечатываю итоговый список транзакций...")
@@ -308,7 +297,7 @@ def print_operations(operations: List[Dict[str, Any]]) -> None:
 
     for i, operation in enumerate(operations, 1):
         print(f"--- Операция {i} ---")
-        print(format_operation(operation))
+        print(format_operation(operation, target_currency))
         print()  # Пустая строка между операциями
 
 
