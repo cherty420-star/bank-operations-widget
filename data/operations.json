@@ -1,8 +1,9 @@
 [
   {
     "id": 1,
+    "state": "EXECUTED",
     "date": "2024-03-15T10:30:00.000000",
-    "amount": "100.50",
+    "amount": 100.50,
     "currency": "RUB",
     "description": "Пополнение счета",
     "from": "Счет 12345678901234567890",
@@ -10,8 +11,9 @@
   },
   {
     "id": 2,
+    "state": "EXECUTED",
     "date": "2024-03-14T12:15:00.000000",
-    "amount": "50.00",
+    "amount": 50.00,
     "currency": "USD",
     "description": "Оплата услуг",
     "from": "Visa Platinum 7000792289606361",
@@ -19,8 +21,9 @@
   },
   {
     "id": 3,
+    "state": "CANCELED",
     "date": "2024-03-13T14:45:00.000000",
-    "amount": "75.25",
+    "amount": 75.25,
     "currency": "EUR",
     "description": "Перевод организации",
     "from": "Maestro 1596837868705199",
@@ -28,20 +31,21 @@
   },
   {
     "id": 4,
+    "state": "EXECUTED",
     "date": "2024-03-12T09:20:00.000000",
-    "amount": "200.00",
+    "amount": 200.00,
     "currency": "RUB",
-    "description": "Снятие наличных",
-    "from": "Счет 55112345678901234567",
-    "to": "Visa Classic 1234567890123456"
+    "description": "Открытие вклада",
+    "to": "Счет 55556666777788889999"
   },
   {
     "id": 5,
+    "state": "PENDING",
     "date": "2024-03-11T16:30:00.000000",
-    "amount": "150.75",
-    "currency": "USD",
-    "description": "Оплата покупки",
-    "from": "MasterCard 5555444433331111",
-    "to": "Счет 12345678901234567890"
+    "amount": 150.75,
+    "currency": "RUB",
+    "description": "Перевод с карты на карту",
+    "from": "MasterCard 1234567812345678",
+    "to": "Visa Classic 8765432187654321"
   }
 ]
