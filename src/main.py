@@ -1,8 +1,9 @@
 from typing import List, Dict, Any
 import os
 import json
-from widget import mask_account_card, get_date
-from operations import process_bank_search
+from src.widget import mask_account_card, get_date
+from src.operations import process_bank_search
+
 
 def load_operations_from_json() -> List[Dict[str, Any]]:
     """

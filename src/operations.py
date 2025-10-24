@@ -18,7 +18,6 @@ def process_bank_search(data: List[Dict[str, Any]], search: str) -> List[Dict[st
         return []
 
     result = []
-    # Создаем case-insensitive паттерн для поиска
     pattern = re.compile(re.escape(search), re.IGNORECASE)
 
     for operation in data:
@@ -43,21 +42,14 @@ def process_bank_operations(data: List[Dict[str, Any]], categories: List[str]) -
     if not data or not categories:
         return {}
 
-    # Приводим категории к нижнему регистру для case-insensitive сравнения
     categories_lower = [category.lower() for category in categories]
-
-    # Используем Counter для эффективного подсчета
-    category_counter = Counter()
-
-    # Инициализируем счетчик нулями для всех категорий
-    for category in categories_lower:
-        category_counter[category] = 0
+    result = {category: 0 for category in categories_lower}
 
     for operation in data:
         description = operation.get('description', '').lower()
         if description:
             for category in categories_lower:
                 if category in description:
-                    category_counter[category] += 1
+                    result[category] += 1
 
-    return dict(category_counter)
+    return result
