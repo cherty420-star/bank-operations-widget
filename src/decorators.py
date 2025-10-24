@@ -1,79 +1,47 @@
-import datetime
-from typing import Any, Callable, Optional
+from typing import Callable, Any, TypeVar, cast
 from functools import wraps
+import time
+
+# Добавляем типизацию для декораторов
+F = TypeVar('F', bound=Callable[..., Any])
 
 
-def log(filename: Optional[str] = None) -> Callable:
+def log_execution(func: F) -> F:
     """
-    Декоратор для логирования выполнения функций.
-
-    Args:
-        filename: Имя файла для записи логов. Если None - вывод в консоль.
-
-    Returns:
-        Декорированную функцию
+    Декоратор для логирования времени выполнения функции.
     """
 
-    def decorator(func: Callable) -> Callable:
+    @wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        print(f"Функция {func.__name__} выполнена за {end_time - start_time:.4f} секунд")
+        return result
+
+    return cast(F, wrapper)
+
+
+def retry(max_attempts: int = 3, delay: float = 1.0) -> Callable[[F], F]:
+    """
+    Декоратор для повторного выполнения функции при ошибках.
+    """
+
+    def decorator(func: F) -> F:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            # Время начала выполнения
-            start_time = datetime.datetime.now()
-            func_name = func.__name__
+            last_exception = None
+            for attempt in range(max_attempts):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    last_exception = e
+                    if attempt < max_attempts - 1:
+                        time.sleep(delay)
+                    print(f"Попытка {attempt + 1} не удалась: {e}")
 
-            # Логируем начало выполнения
-            log_message = f"{start_time.strftime('%Y-%m-%d %H:%M:%S')} - {func_name} - started\n"
+            raise last_exception  # type: ignore
 
-            try:
-                # Выполняем функцию
-                result = func(*args, **kwargs)
-
-                # Логируем успешное завершение
-                end_time = datetime.datetime.now()
-                execution_time = (end_time - start_time).total_seconds()
-                success_message = (
-                    f"{end_time.strftime('%Y-%m-%d %H:%M:%S')} - {func_name} - finished "
-                    f"[execution time: {execution_time:.2f}s] - result: {result}\n"
-                )
-                log_message += success_message
-
-                # Записываем лог
-                _write_log(log_message, filename)
-
-                return result
-
-            except Exception as e:
-                # Логируем ошибку
-                end_time = datetime.datetime.now()
-                execution_time = (end_time - start_time).total_seconds()
-                error_message = (
-                    f"{end_time.strftime('%Y-%m-%d %H:%M:%S')} - {func_name} - failed "
-                    f"[execution time: {execution_time:.2f}s] - error: {type(e).__name__}: {e} - "
-                    f"args: {args}, kwargs: {kwargs}\n"
-                )
-                log_message += error_message
-
-                # Записываем лог
-                _write_log(log_message, filename)
-
-                # Пробрасываем исключение дальше
-                raise
-
-        return wrapper
+        return cast(F, wrapper)
 
     return decorator
-
-
-def _write_log(message: str, filename: Optional[str] = None) -> None:
-    """
-    Записывает сообщение в файл или выводит в консоль.
-
-    Args:
-        message: Сообщение для логирования
-        filename: Имя файла для записи (None для вывода в консоль)
-    """
-    if filename:
-        with open(filename, 'a', encoding='utf-8') as file:
-            file.write(message)
-    else:
-        print(message, end='')
