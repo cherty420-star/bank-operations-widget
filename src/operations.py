@@ -6,11 +6,19 @@ from typing import List, Dict, Any
 def process_bank_search(data: List[Dict[str, Any]], search: str) -> List[Dict[str, Any]]:
     """
     Ищет операции по заданной строке в описании с использованием регулярных выражений.
+
+    Args:
+        data: Список словарей с данными о банковских операциях
+        search: Строка для поиска в описании операций
+
+    Returns:
+        List[Dict]: Список операций, у которых в описании есть искомая строка
     """
     if not data or not search:
         return []
 
-    result: List[Dict[str, Any]] = []
+    result = []
+    # Создаем case-insensitive паттерн для поиска
     pattern = re.compile(re.escape(search), re.IGNORECASE)
 
     for operation in data:
@@ -24,13 +32,26 @@ def process_bank_search(data: List[Dict[str, Any]], search: str) -> List[Dict[st
 def process_bank_operations(data: List[Dict[str, Any]], categories: List[str]) -> Dict[str, int]:
     """
     Подсчитывает количество операций по заданным категориям.
+
+    Args:
+        data: Список словарей с данными о банковских операциях
+        categories: Список категорий для подсчета
+
+    Returns:
+        Dict[str, int]: Словарь с количеством операций по категориям
     """
     if not data or not categories:
         return {}
 
+    # Приводим категории к нижнему регистру для case-insensitive сравнения
     categories_lower = [category.lower() for category in categories]
-    # Добавляем аннотацию типа для category_counter
-    category_counter: Counter[str] = Counter()
+
+    # Используем Counter для эффективного подсчета
+    category_counter = Counter()
+
+    # Инициализируем счетчик нулями для всех категорий
+    for category in categories_lower:
+        category_counter[category] = 0
 
     for operation in data:
         description = operation.get('description', '').lower()
