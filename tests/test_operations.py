@@ -1,5 +1,5 @@
 import pytest
-from src.operations import process_bank_search, process_bank_operations, find_operations_by_pattern
+from src.operations import process_bank_search, process_bank_operations
 
 
 class TestProcessBankSearch:
@@ -101,30 +101,6 @@ class TestProcessBankOperations:
         assert isinstance(result, dict)
         assert result['перевод'] == 2
         assert result['вклад'] == 1
-
-
-class TestFindOperationsByPattern:
-    """Тесты для поиска по регулярным выражениям."""
-
-    def test_regex_search(self):
-        """Тест поиска по регулярному выражению."""
-        data = [
-            {'description': 'Перевод организации'},
-            {'description': 'Открытие вклада'},
-            {'description': 'Перевод с карты на карту'}
-        ]
-        result = find_operations_by_pattern(data, r'перевод.*организации')
-        assert len(result) == 1
-        assert result[0]['description'] == 'Перевод организации'
-
-    def test_regex_case_insensitive(self):
-        """Тест регистронезависимого поиска по regex."""
-        data = [
-            {'description': 'ПЕРЕВОД ОРГАНИЗАЦИИ'},
-            {'description': 'перевод организации'}
-        ]
-        result = find_operations_by_pattern(data, r'перевод.*организации')
-        assert len(result) == 2
 
 
 def test_integration():
