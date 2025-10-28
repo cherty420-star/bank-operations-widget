@@ -1,6 +1,6 @@
-from typing import Callable, Any, TypeVar, cast
 from functools import wraps
 import time
+from typing import Any, Callable, TypeVar, cast
 
 # Добавляем типизацию для декораторов
 F = TypeVar('F', bound=Callable[..., Any])
