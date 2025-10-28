@@ -1,7 +1,8 @@
-import json
 import csv
+import json
+from typing import Any, Dict, List
+
 import pandas as pd
-from typing import List, Dict, Any
 
 
 def read_json_file(file_path: str) -> List[Dict[str, Any]]:

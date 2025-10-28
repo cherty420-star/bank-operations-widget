@@ -2,7 +2,7 @@
 Модуль для конвертации валют.
 """
 
-from typing import Optional, Dict, Union
+from typing import Dict, Optional, Union
 
 
 class CurrencyConverter:

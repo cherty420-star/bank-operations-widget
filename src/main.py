@@ -1,70 +1,87 @@
-import json
 import csv
-import pandas as pd
-import random
+import json
 import os
-from typing import List, Dict, Any
-from src.operations import process_bank_search, process_bank_operations
+import random
+from typing import Any, Dict, List
+
+import pandas as pd
+
+from src.operations import process_bank_operations, process_bank_search
 
 
 def get_file_path(filename: str) -> str:
     """
     Возвращает абсолютный путь к файлу в папке data.
-
-    Args:
-        filename: Имя файла
-
-    Returns:
-        str: Абсолютный путь к файлу
     """
-    # Получаем путь к директории, где находится main.py
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    # Поднимаемся на уровень выше (в корень проекта)
     project_root = os.path.dirname(current_dir)
-    # Формируем путь к файлу в папке data
     return os.path.join(project_root, "data", filename)
 
 
+def load_operations(file_type: str) -> List[Dict[str, Any]]:
+    """
+    Загружает операции из файла.
+    """
+    file_types = {"1": "JSON", "2": "CSV", "3": "XLSX"}
+
+    if file_type not in file_types:
+        print("❌ Неверный выбор файла")
+        return []
+
+    print(f"Для обработки выбран {file_types[file_type]}-файл.")
+
+    # Определяем пути к файлам
+    file_paths = {
+        "1": get_file_path("operations.json"),
+        "2": get_file_path("transactions.csv"),
+        "3": get_file_path("operations.xlsx")
+    }
+
+    file_path = file_paths.get(file_type)
+
+    if not file_path:
+        print("❌ Путь к файлу не определен")
+        return []
+
+    try:
+        operations = []
+        if file_type == "1":  # JSON
+            operations = read_json_file(file_path)
+        elif file_type == "2":  # CSV
+            operations = read_csv_file(file_path)
+        elif file_type == "3":  # XLSX
+            operations = read_excel_file(file_path)
+
+        if operations:
+            print(f"✅ Успешно загружено {len(operations)} операций")
+            return operations
+        else:
+            print("⚠️ Файл загружен, но не содержит операций")
+            return []
+
+    except Exception as e:
+        print(f"❌ Ошибка загрузки данных: {e}")
+        return []
+
+
 def read_json_file(file_path: str) -> List[Dict[str, Any]]:
-    """
-    Читает JSON файл с операциями.
-
-    Args:
-        file_path: Путь к JSON файлу
-
-    Returns:
-        List[Dict]: Список операций
-    """
+    """Читает JSON файл с операциями."""
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
-
-        if isinstance(data, list):
-            return data
-        elif isinstance(data, dict):
-            return data.get('operations', [])
-        return []
+        return data if isinstance(data, list) else []
     except Exception as e:
         print(f"Ошибка чтения JSON файла: {e}")
         return []
 
 
 def read_csv_file(file_path: str) -> List[Dict[str, Any]]:
-    """
-    Читает CSV файл с операциями.
-
-    Args:
-        file_path: Путь к CSV файлу
-
-    Returns:
-        List[Dict]: Список операций
-    """
+    """Читает CSV файл с операциями."""
     try:
         operations = []
         with open(file_path, 'r', encoding='utf-8') as file:
             reader = csv.DictReader(file)
             for row in reader:
-                # Безопасная конвертация типов данных
                 operation = {
                     'id': int(row['id']) if row.get('id') and row['id'].strip().isdigit() else 0,
                     'state': row.get('state', ''),
@@ -83,120 +100,12 @@ def read_csv_file(file_path: str) -> List[Dict[str, Any]]:
 
 
 def read_excel_file(file_path: str) -> List[Dict[str, Any]]:
-    """
-    Читает Excel файл с операциями.
-
-    Args:
-        file_path: Путь к Excel файлу
-
-    Returns:
-        List[Dict]: Список операций
-    """
+    """Читает Excel файл с операциями."""
     try:
         df = pd.read_excel(file_path)
-        operations = df.to_dict('records')
-        return operations
+        return df.to_dict('records')
     except Exception as e:
         print(f"Ошибка чтения Excel файла: {e}")
-        return []
-
-
-def mask_account_card(account_info: str) -> str:
-    """
-    Маскирует номер счета или карты.
-
-    Args:
-        account_info: Информация о счете/карте
-
-    Returns:
-        str: Замаскированная информация
-    """
-    if not account_info:
-        return ""
-
-    if "Счет" in account_info:
-        # Маскировка счета: показываем последние 4 цифры
-        numbers = ''.join(filter(str.isdigit, account_info))
-        if len(numbers) >= 4:
-            return f"Счет **{numbers[-4:]}"
-        return account_info
-    else:
-        # Маскировка карты: показываем первые 6 и последние 4 цифры
-        numbers = ''.join(filter(str.isdigit, account_info))
-        if len(numbers) == 16:
-            return f"{account_info.split()[0]} {numbers[:4]} {numbers[4:6]}** **** {numbers[-4:]}"
-        return account_info
-
-
-def get_date(date_string: str) -> str:
-    """
-    Форматирует дату из ISO формата в DD.MM.YYYY.
-
-    Args:
-        date_string: Дата в формате ISO
-
-    Returns:
-        str: Отформатированная дата
-    """
-    try:
-        if 'T' in date_string:
-            date_part = date_string.split('T')[0]
-            year, month, day = date_part.split('-')
-            return f"{day}.{month}.{year}"
-        return date_string
-    except Exception:
-        return date_string
-
-
-def load_operations(file_type: str) -> List[Dict[str, Any]]:
-    """
-    Загружает операции из файла используя существующие функции.
-
-    Args:
-        file_type: Тип файла (1 - JSON, 2 - CSV, 3 - XLSX)
-
-    Returns:
-        List[Dict]: Список операций
-    """
-    file_types = {"1": "JSON", "2": "CSV", "3": "XLSX"}
-
-    if file_type not in file_types:
-        return []
-
-    print(f"Для обработки выбран {file_types[file_type]}-файл.")
-
-    # Определяем пути к файлам
-    file_paths = {
-        "1": get_file_path("operations.json"),  # JSON
-        "2": get_file_path("transactions.csv"),  # CSV
-        "3": get_file_path("operations.xlsx")  # XLSX
-    }
-
-    file_path = file_paths.get(file_type)
-
-    if not file_path or not os.path.exists(file_path):
-        print(f"❌ Файл не найден: {file_path}")
-        print("Убедитесь, что файлы находятся в папке data/ в корне проекта")
-        return []
-
-    try:
-        operations = []
-        if file_type == "1":  # JSON
-            operations = read_json_file(file_path)
-        elif file_type == "2":  # CSV
-            operations = read_csv_file(file_path)
-        elif file_type == "3":  # XLSX
-            operations = read_excel_file(file_path)
-
-        if operations:
-            print(f"✅ Успешно загружено {len(operations)} операций из {file_path}")
-            return operations
-        else:
-            print("⚠️ Файл загружен, но не содержит операций")
-            return []
-
-    except Exception as e:
-        print(f"❌ Ошибка загрузки данных: {e}")
         return []
 
 
@@ -357,6 +266,57 @@ def show_category_statistics(operations: List[Dict[str, Any]]) -> None:
                 print(f"{category}: {count} операций")
 
 
+def mask_account_card(account_info: Any) -> str:
+    """
+    Маскирует номер счета или карты.
+
+    Args:
+        account_info: Информация о счете/карте (может быть строкой, числом или None)
+
+    Returns:
+        str: Замаскированная информация
+    """
+    if not account_info:
+        return ""
+
+    # Преобразуем в строку, если это число
+    account_str = str(account_info) if not isinstance(account_info, str) else account_info
+
+    if "Счет" in account_str:
+        # Маскировка счета: показываем последние 4 цифры
+        numbers = ''.join(filter(str.isdigit, account_str))
+        if len(numbers) >= 4:
+            return f"Счет **{numbers[-4:]}"
+        return account_str
+    else:
+        # Маскировка карты: показываем первые 6 и последние 4 цифры
+        numbers = ''.join(filter(str.isdigit, account_str))
+        if len(numbers) == 16:
+            card_name = account_str.split()[0] if ' ' in account_str else "Карта"
+            return f"{card_name} {numbers[:4]} {numbers[4:6]}** **** {numbers[-4:]}"
+        return account_str
+
+
+def get_date(date_string: str) -> str:
+    """
+    Форматирует дату из ISO формата в DD.MM.YYYY.
+
+    Args:
+        date_string: Дата в формате ISO
+
+    Returns:
+        str: Отформатированная дата
+    """
+    try:
+        if 'T' in date_string:
+            date_part = date_string.split('T')[0]
+            year, month, day = date_part.split('-')
+            return f"{day}.{month}.{year}"
+        return date_string
+    except Exception:
+        return date_string
+
+
 def format_operation(operation: Dict[str, Any]) -> str:
     """
     Форматирует операцию для вывода.
@@ -410,57 +370,11 @@ def print_operations(operations: List[Dict[str, Any]]) -> None:
         print()
 
 
-def check_data_files() -> bool:
-    """
-    Проверяет наличие файлов данных.
-
-    Returns:
-        bool: True если все файлы существуют
-    """
-    files_to_check = [
-        ("operations.json", get_file_path("operations.json")),
-        ("transactions.csv", get_file_path("transactions.csv")),
-        ("operations.xlsx", get_file_path("operations.xlsx"))
-    ]
-
-    print("🔍 Проверка файлов данных:")
-    all_exist = True
-
-    for filename, filepath in files_to_check:
-        exists = os.path.exists(filepath)
-        status = "✅ СУЩЕСТВУЕТ" if exists else "❌ ОТСУТСТВУЕТ"
-        print(f"   {filename}: {status}")
-        if not exists:
-            all_exist = False
-
-    if not all_exist:
-        print("\n⚠️  Некоторые файлы отсутствуют!")
-        print("Убедитесь, что в папке data/ находятся:")
-        print("   - operations.json")
-        print("   - transactions.csv")
-        print("   - operations.xlsx")
-        print("\nСтруктура проекта должна быть:")
-        print("bank-operations-widget/")
-        print("├── data/")
-        print("│   ├── operations.json")
-        print("│   ├── transactions.csv")
-        print("│   └── operations.xlsx")
-        print("└── src/")
-        print("    └── main.py")
-
-    return all_exist
-
-
 def main() -> None:
     """
     Основная логика программы работы с банковскими транзакциями.
     """
     print("Привет! Добро пожаловать в программу работы с банковскими транзакциями.")
-
-    # Проверяем наличие файлов данных
-    if not check_data_files():
-        print("\n❌ Не удалось запустить программу: отсутствуют файлы данных")
-        return
 
     print("\nВыберите необходимый пункт меню:")
     print("1. Получить информацию о транзакциях из JSON-файла")
