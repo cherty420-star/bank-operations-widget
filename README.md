@@ -74,3 +74,188 @@ from src.widget import get_date
 formatted_date = get_date("2024-03-11T02:26:18.671407")
 # Результат: "11.03.2024"
 ```
+
+## Тестирование
+
+### Запуск тестов
+```bash
+# Все тесты
+pytest
+
+# С отчетом о покрытии
+pytest --cov=src --cov-report=html
+
+# Конкретный модуль
+pytest tests/test_processing.py -v
+
+Покрытие кода
+Запустите pytest --cov=src --cov-report=html
+
+Откройте htmlcov/index.html для просмотра отчета
+
+Требуемое покрытие: >80%
+
+text
+
+## 9. **Сделайте коммиты и создайте PR**
+
+```bash
+git add .
+git commit -m "Add comprehensive test suite with fixtures and parametrization"
+git commit -m "Update README with testing documentation"
+git push origin feature/testing
+
+
+## Модуль generators
+
+### filter_by_currency(transactions, currency) -> Iterator[Dict]
+Фильтрует транзакции по валюте и возвращает итератор.
+
+**Параметры:**
+- `transactions`: список транзакций
+- `currency`: код валюты (например, 'USD', 'RUB', 'EUR')
+
+**Пример:**
+```python
+from src.generators import filter_by_currency
+
+transactions = [
+    {'operationAmount': {'currency': {'code': 'USD'}}},
+    {'operationAmount': {'currency': {'code': 'RUB'}}}
+]
+
+usd_transactions = filter_by_currency(transactions, 'USD')
+for transaction in usd_transactions:
+    print(transaction)
+
+transaction_descriptions(transactions) -> Generator[str]
+Генератор описаний транзакций.
+
+Пример:
+
+python
+from src.generators import transaction_descriptions
+
+descriptions = transaction_descriptions(transactions)
+for description in descriptions:
+    print(description)
+card_number_generator(start, end) -> Generator[str]
+Генератор номеров банковских карт в формате XXXX XXXX XXXX XXXX.
+
+Параметры:
+
+start: начальный номер (от 1)
+
+end: конечный номер (до 9999999999999999)
+
+Пример:
+
+python
+from src.generators import card_number_generator
+
+# Генерация 5 номеров карт
+card_numbers = card_number_generator(1, 5)
+for number in card_numbers:
+    print(number)
+# Output: 
+# 0000 0000 0000 0001
+# 0000 0000 0000 0002
+# ...
+Тестирование
+bash
+# Запуск тестов для генераторов
+pytest tests/test_generators.py -v
+
+# Проверка покрытия
+pytest --cov=src.generators --cov-report=html
+Пример использования
+python
+from src.generators import filter_by_currency, card_number_generator
+
+# Фильтрация транзакций
+usd_transactions = list(filter_by_currency(transactions, 'USD'))
+
+# Генерация тестовых номеров карт
+test_cards = list(card_number_generator(1000000000000000, 1000000000000005))
+
+## Модуль decorators
+
+### Декоратор `log(filename=None)`
+Автоматически логирует выполнение функций с временными метками и информацией об ошибках.
+
+**Параметры:**
+- `filename`: имя файла для записи логов (если None - вывод в консоль)
+
+**Логируемая информация:**
+- Время начала и окончания выполнения
+- Имя функции
+- Результат выполнения (при успехе)
+- Информация об ошибках (тип, сообщение, аргументы)
+- Время выполнения
+
+**Пример использования:**
+```python
+from src.decorators import log
+
+# Логирование в консоль
+@log()
+def add(a, b):
+    return a + b
+
+# Логирование в файл
+@log(filename="app.log")
+def process_data(data):
+    if not data:
+        raise ValueError("Empty data")
+    return data.upper()
+
+# Использование
+result = add(2, 3)  # Логи в консоль
+process_data("test")  # Логи в файл app.log
+
+## Новая функциональность
+
+### Поиск операций
+- Реализована функция `process_bank_search` для поиска операций по описанию
+- Использует регулярные выражения для case-insensitive поиска
+
+### Подсчет операций по категориям  
+- Реализована функция `process_bank_operations` для подсчета операций
+- Использует Counter из collections для эффективного подсчета
+5. Критерии оценки - чеклист
+Pull request создан из homework-* в develop
+
+В коммитах нет игнорируемых файлов
+
+README обновлен с описанием новой функциональности
+
+Реализован поиск с помощью re (2 аргумента, возвращает список)
+
+Реализован подсчет категорий с Counter (2 аргумента, возвращает словарь)
+
+Реализована функция main() с пользовательским интерфейсом
+
+Написаны тесты для новой функциональности
+
+Покрытие тестами ≥80%
+
+Все тесты проходят через pytest
+
+Flake8 ошибок ≤5
+
+Isort ошибок ≤1
+
+У всех функций есть docstring
+
+Соблюдены правила PEP 8
+
+## Homework 4 - Bank Operations Widget
+
+### New Features:
+- **process_bank_search()** - поиск операций по описанию с использованием регулярных выражений
+- **process_bank_operations()** - подсчет операций по категориям с использованием Counter
+- **Interactive CLI** - фильтрация по статусу, дате, валюте и ключевым словам
+
+### Usage:
+```bash
+python src/main.py
