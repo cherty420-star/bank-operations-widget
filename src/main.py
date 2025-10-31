@@ -165,8 +165,24 @@ def format_operation(operation: Dict[str, Any]) -> str:
     # Используем импортированную функцию get_date из widget.py
     date = get_date(operation.get('date', ''))
     description = operation.get('description', '')
-    amount = operation.get('amount', 0)
-    currency = operation.get('currency', 'RUB')
+
+    # ОБРАБАТЫВАЕМ СУММУ И ВАЛЮТУ (вложенная структура)
+    amount = 0
+    currency = 'RUB'
+
+    # Проверяем вложенную структуру operationAmount
+    operation_amount = operation.get('operationAmount')
+    if operation_amount and isinstance(operation_amount, dict):
+        amount = operation_amount.get('amount', 0)
+        currency_info = operation_amount.get('currency', {})
+        if isinstance(currency_info, dict):
+            currency = currency_info.get('code', 'RUB')
+        else:
+            currency = str(currency_info) if currency_info else 'RUB'
+    else:
+        # Если нет operationAmount, ищем на верхнем уровне
+        amount = operation.get('amount', 0)
+        currency = operation.get('currency', 'RUB')
 
     from_account = operation.get('from', '')
     to_account = operation.get('to', '')
